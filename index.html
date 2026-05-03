@@ -24,44 +24,53 @@
 
 <script>
 let peer = new Peer();
-let currentStream;
+let currentStream = null;
 
 peer.on("open", id => {
   document.getElementById("myId").innerText = id;
 });
 
-// Start
+peer.on("call", call => {
+  if (currentStream) {
+    call.answer(currentStream);
+  } else {
+    alert("Host not sharing yet.");
+  }
+});
+
 async function startSharing() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+    alert("Screen sharing not supported.");
+    return;
+  }
+
   try {
-    const stream = await navigator.mediaDevices.getDisplayMedia({
+    currentStream = await navigator.mediaDevices.getDisplayMedia({
       video: true,
       audio: true
     });
 
-    currentStream = stream;
-
-    peer.on("call", call => {
-      call.answer(stream);
-    });
+    alert("Started, Give your code to someone.");
 
   } catch (e) {
     alert("Error: " + e);
   }
 }
 
-// Connect
 function connect() {
   const id = document.getElementById("peerId").value;
 
-  navigator.mediaDevices.getUserMedia({ video: false, audio: false })
-    .then(stream => {
-      const call = peer.call(id, stream);
+  const call = peer.call(id, null);
 
-      call.on("stream", remoteStream => {
-        const video = document.getElementById("video");
-        video.srcObject = remoteStream;
-      });
-    });
+  call.on("stream", remoteStream => {
+    const video = document.getElementById("video");
+    video.srcObject = remoteStream;
+    video.play();
+  });
+
+  call.on("error", err => {
+    alert("Connection error: " + err);
+  });
 }
 </script>
 
