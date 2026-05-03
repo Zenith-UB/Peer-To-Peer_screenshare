@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>P-t-P Screen Share</title>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <style>
+    body { font-family: Arial; text-align: center; }
+    video { width: 80%; border: 2px solid black; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+<h2>Peer-to-Peer Screen Share</h2>
+
+<button onclick="startSharing()">Start Sharing</button>
+<p>Your Code: <span id="myId">...</span></p>
+
+<hr>
+
+<input id="peerId" placeholder="Enter code to view">
+<button onclick="connect()">View Screen</button>
+
+<video id="video" autoplay playsinline></video>
+
+<script>
+let peer = new Peer();
+let currentStream;
+
+peer.on("open", id => {
+  document.getElementById("myId").innerText = id;
+});
+
+// Start
+async function startSharing() {
+  try {
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: true,
+      audio: true
+    });
+
+    currentStream = stream;
+
+    peer.on("call", call => {
+      call.answer(stream);
+    });
+
+  } catch (e) {
+    alert("Error: " + e);
+  }
+}
+
+// Connect
+function connect() {
+  const id = document.getElementById("peerId").value;
+
+  navigator.mediaDevices.getUserMedia({ video: false, audio: false })
+    .then(stream => {
+      const call = peer.call(id, stream);
+
+      call.on("stream", remoteStream => {
+        const video = document.getElementById("video");
+        video.srcObject = remoteStream;
+      });
+    });
+}
+</script>
+
+</body>
+</html>
